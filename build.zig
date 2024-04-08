@@ -156,34 +156,43 @@ pub fn build (builder: *std.Build) !void
     {
       .file => {
                  const file = try std.fs.path.join (builder.allocator, &.{ source_path, entry.path, });
-                 if (std.mem.endsWith (u8, entry.basename, ".cpp"))
+                 if (std.fs.path.dirname (entry.path) == null or
+                   std.mem.eql (u8, "opt", std.fs.path.dirname (entry.path) orelse "") or
+                   std.mem.eql (u8, "val", std.fs.path.dirname (entry.path) orelse "") or
+                   std.mem.eql (u8, "util", std.fs.path.dirname (entry.path) orelse ""))
                  {
-                   if (std.fs.path.dirname (entry.path) == null or
-                     std.mem.eql (u8, "opt", std.fs.path.dirname (entry.path) orelse "") or
-                     std.mem.eql (u8, "val", std.fs.path.dirname (entry.path) orelse "") or
-                     std.mem.eql (u8, "util", std.fs.path.dirname (entry.path) orelse ""))
+                   if (std.mem.endsWith (u8, entry.basename, ".cpp"))
                    {
                      try sources.append (file);
                      std.debug.print ("[spirv-tools source] {s}\n", .{ file, });
-                   } else try std.fs.deleteFileAbsolute (file);
-                 }
+                   }
+                 } else try std.fs.deleteFileAbsolute (file);
                },
       else => {},
     }
   }
 
-  walker = try source_dir.walk (builder.allocator);
-  defer walker.deinit();
+  var flag = true;
 
-  while (try walker.next ()) |entry|
+  while (flag)
   {
-    switch (entry.kind)
+    flag = false;
+    walker = try source_dir.walk (builder.allocator);
+    defer walker.deinit();
+
+    while (try walker.next ()) |entry|
     {
-      .directory => std.fs.deleteDirAbsolute (try std.fs.path.join (builder.allocator, &.{ source_path, entry.path, })) catch |err|
-                    {
-                      if (err != error.DirNotEmpty) return err;
-                    },
-      else => {},
+      switch (entry.kind)
+      {
+        .directory => {
+                        std.fs.deleteDirAbsolute (try std.fs.path.join (builder.allocator, &.{ source_path, entry.path, })) catch |err|
+                        {
+                          if (err == error.DirNotEmpty) continue else return err;
+                        };
+                        flag = true;
+                      },
+        else => {},
+      }
     }
   }
 
