@@ -27,7 +27,7 @@ fn update_sources (builder: *std.Build, path: *const Paths) !void
     defer dir.close ();
 
     walker = try dir.walk (builder.allocator);
-    defer walker.deinit();
+    defer walker.deinit ();
 
     while (try walker.next ()) |entry|
     {
@@ -59,7 +59,7 @@ fn update_generated (builder: *std.Build, path: *const Paths) !void
   defer build_dir.close ();
 
   var walker = try build_dir.walk (builder.allocator);
-  defer walker.deinit();
+  defer walker.deinit ();
 
   while (try walker.next ()) |entry|
   {
@@ -148,7 +148,7 @@ pub fn build (builder: *std.Build) !void
   defer source_dir.close ();
 
   var walker = try source_dir.walk (builder.allocator);
-  defer walker.deinit();
+  defer walker.deinit ();
 
   while (try walker.next ()) |entry|
   {
@@ -178,7 +178,7 @@ pub fn build (builder: *std.Build) !void
   {
     flag = false;
     walker = try source_dir.walk (builder.allocator);
-    defer walker.deinit();
+    defer walker.deinit ();
 
     while (try walker.next ()) |entry|
     {
