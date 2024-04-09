@@ -1,10 +1,11 @@
 const std = @import ("std");
 const toolbox = @import ("toolbox");
-const pkg = .{ .name = "spirvtools.zig", .version = "1.3.275", };
+const pkg = .{ .name = "spirvtools.zig", .version = "1.3.280", };
 
 const Paths = struct
 {
   tmp: [] const u8 = undefined,
+  source: [] const u8 = undefined,
   build: [] const u8 = undefined,
 };
 
@@ -76,12 +77,8 @@ fn update_generated (builder: *std.Build, path: *const Paths) !void
   }
 }
 
-fn update (builder: *std.Build) !void
+fn update (builder: *std.Build, path: *const Paths) !void
 {
-  var path: Paths = .{};
-  path.tmp = try builder.build_root.join (builder.allocator, &.{ "tmp", });
-  path.build = try std.fs.path.join (builder.allocator, &.{ path.tmp, "build", });
-
   std.fs.deleteTreeAbsolute (path.tmp) catch |err|
   {
     switch (err)
@@ -101,10 +98,60 @@ fn update (builder: *std.Build) !void
   try toolbox.run (builder, .{ .argv = &[_][] const u8 { "cmake", "..", }, .cwd = path.build, });
   try toolbox.run (builder, .{ .argv = &[_][] const u8 { "make", }, .cwd = path.build, .wait = wait_20_secs, });
 
-  try update_sources (builder, &path);
-  try update_generated (builder, &path);
+  try update_sources (builder, path);
+  try update_generated (builder, path);
 
   try std.fs.deleteTreeAbsolute (path.tmp);
+
+  var source_dir = try std.fs.openDirAbsolute (path.source, .{ .iterate = true, });
+  defer source_dir.close ();
+
+  var walker = try source_dir.walk (builder.allocator);
+  defer walker.deinit ();
+
+  while (try walker.next ()) |entry|
+  {
+    switch (entry.kind)
+    {
+      .file => if (std.fs.path.dirname (entry.path)) |dirname|
+               {
+                 if (!std.mem.eql (u8, "opt", dirname) and
+                   !std.mem.eql (u8, "val", dirname) and !std.mem.eql (u8, "util", dirname))
+                     try std.fs.deleteFileAbsolute (try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, }));
+               },
+      else => {},
+    }
+  }
+
+  var flag = true;
+
+  while (flag)
+  {
+    flag = false;
+    walker = try source_dir.walk (builder.allocator);
+    defer walker.deinit ();
+
+    while (try walker.next ()) |entry|
+    {
+      const entry_path = try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, });
+      switch (entry.kind)
+      {
+        .file => if (std.mem.endsWith (u8, entry.basename, ".txt"))
+                 {
+                   try std.fs.deleteFileAbsolute (entry_path);
+                   flag = true;
+                 },
+        .directory => {
+                        std.fs.deleteDirAbsolute (entry_path) catch |err|
+                        {
+                          if (err == error.DirNotEmpty) continue else return err;
+                        };
+                        flag = true;
+                      },
+        else => {},
+      }
+    }
+  }
 }
 
 pub fn build (builder: *std.Build) !void
@@ -112,9 +159,17 @@ pub fn build (builder: *std.Build) !void
   const target = builder.standardTargetOptions (.{});
   const optimize = builder.standardOptimizeOption (.{});
 
-  if (builder.option (bool, "update", "Update binding") orelse false) try update (builder);
+  var path: Paths = .{};
+  path.tmp = try builder.build_root.join (builder.allocator, &.{ "tmp", });
+  path.source = try builder.build_root.join (builder.allocator, &.{ "source", });
+  path.build = try std.fs.path.join (builder.allocator, &.{ path.tmp, "build", });
 
-  const spirv_headers = builder.dependency ("spirv_headers", .{});
+  if (builder.option (bool, "update", "Update binding") orelse false) try update (builder, &path);
+
+  const spirv_headers = builder.dependency ("spirv_headers", .{
+    .target = target,
+    .optimize = optimize,
+  });
 
   const lib = builder.addStaticLibrary (.{
     .name = "spirv_tools",
@@ -142,9 +197,7 @@ pub fn build (builder: *std.Build) !void
 
   lib.linkLibCpp ();
 
-  const source_path = try builder.build_root.join (builder.allocator, &.{ "source", });
-
-  var source_dir = try std.fs.openDirAbsolute (source_path, .{ .iterate = true, });
+  var source_dir = try std.fs.openDirAbsolute (path.source, .{ .iterate = true, });
   defer source_dir.close ();
 
   var walker = try source_dir.walk (builder.allocator);
@@ -155,44 +208,14 @@ pub fn build (builder: *std.Build) !void
     switch (entry.kind)
     {
       .file => {
-                 const file = try std.fs.path.join (builder.allocator, &.{ source_path, entry.path, });
-                 if (std.fs.path.dirname (entry.path) == null or
-                   std.mem.eql (u8, "opt", std.fs.path.dirname (entry.path) orelse "") or
-                   std.mem.eql (u8, "val", std.fs.path.dirname (entry.path) orelse "") or
-                   std.mem.eql (u8, "util", std.fs.path.dirname (entry.path) orelse ""))
+                 const source = try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, });
+                 if (std.mem.endsWith (u8, entry.basename, ".cpp"))
                  {
-                   if (std.mem.endsWith (u8, entry.basename, ".cpp"))
-                   {
-                     try sources.append (file);
-                     std.debug.print ("[spirv-tools source] {s}\n", .{ file, });
-                   }
-                 } else try std.fs.deleteFileAbsolute (file);
+                   try sources.append (source);
+                   std.debug.print ("[spirv-tools source] {s}\n", .{ source, });
+                 }
                },
       else => {},
-    }
-  }
-
-  var flag = true;
-
-  while (flag)
-  {
-    flag = false;
-    walker = try source_dir.walk (builder.allocator);
-    defer walker.deinit ();
-
-    while (try walker.next ()) |entry|
-    {
-      switch (entry.kind)
-      {
-        .directory => {
-                        std.fs.deleteDirAbsolute (try std.fs.path.join (builder.allocator, &.{ source_path, entry.path, })) catch |err|
-                        {
-                          if (err == error.DirNotEmpty) continue else return err;
-                        };
-                        flag = true;
-                      },
-        else => {},
-      }
     }
   }
 
