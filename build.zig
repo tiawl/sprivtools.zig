@@ -1,13 +1,41 @@
 const std = @import ("std");
 const toolbox = @import ("toolbox");
-const pkg = .{ .name = "spirvtools.zig", .version = "1.3.280", };
+const pkg = .{ .name = "spirv.zig", .version = "1.3.280", };
 
 const Paths = struct
 {
   tmp: [] const u8 = undefined,
+  include: [] const u8 = undefined,
   source: [] const u8 = undefined,
   build: [] const u8 = undefined,
 };
+
+fn update_headers (builder: *std.Build, path: *const Paths) !void
+{
+  try toolbox.run (builder, .{ .argv = &[_][] const u8 { "git", "clone", "https://github.com/KhronosGroup/SPIRV-Headers.git", path.tmp, }, });
+  try toolbox.run (builder, .{ .argv = &[_][] const u8 { "git", "-C", path.tmp, "checkout", "vulkan-sdk-" ++ pkg.version ++ ".0", }, });
+
+  const spirv_headers_path = try std.fs.path.join (builder.allocator, &.{ path.tmp, "include", });
+  var spirv_headers_dir = try std.fs.openDirAbsolute (spirv_headers_path, .{ .iterate = true, });
+  defer spirv_headers_dir.close ();
+
+  var walker = try spirv_headers_dir.walk (builder.allocator);
+  defer walker.deinit ();
+
+  while (try walker.next ()) |entry|
+  {
+    const dest = try std.fs.path.join (builder.allocator, &.{ path.include, entry.path, });
+    switch (entry.kind)
+    {
+      .file => if (toolbox.is_header_file (entry.basename)) try toolbox.copy (
+        try std.fs.path.join (builder.allocator, &.{ spirv_headers_path, entry.path, }), dest),
+      .directory => try toolbox.make (dest),
+      else => return error.UnexpectedEntryKind,
+    }
+  }
+
+  try std.fs.deleteTreeAbsolute (path.tmp);
+}
 
 fn update_sources (builder: *std.Build, path: *const Paths) !void
 {
@@ -20,9 +48,6 @@ fn update_sources (builder: *std.Build, path: *const Paths) !void
   {
     src_path = try std.fs.path.join (builder.allocator, &.{ path.tmp, dir_name, });
     dest_path = try builder.build_root.join (builder.allocator, &.{ dir_name, });
-
-    try std.fs.deleteTreeAbsolute (dest_path);
-    try toolbox.make (dest_path);
 
     dir = try std.fs.openDirAbsolute (src_path, .{ .iterate = true, });
     defer dir.close ();
@@ -87,6 +112,14 @@ fn update (builder: *std.Build, path: *const Paths) !void
       else => return err,
     }
   };
+
+  for ([_][] const u8 { path.include, path.source, }) |dest_path|
+  {
+    try std.fs.deleteTreeAbsolute (dest_path);
+    try toolbox.make (dest_path);
+  }
+
+  try update_headers (builder, path);
 
   try toolbox.run (builder, .{ .argv = &[_][] const u8 { "git", "clone", "https://github.com/KhronosGroup/SPIRV-Tools.git", path.tmp, }, });
   try toolbox.run (builder, .{ .argv = &[_][] const u8 { "git", "-C", path.tmp, "checkout", "vulkan-sdk-" ++ pkg.version ++ ".0", }, });
@@ -161,18 +194,14 @@ pub fn build (builder: *std.Build) !void
 
   var path: Paths = .{};
   path.tmp = try builder.build_root.join (builder.allocator, &.{ "tmp", });
+  path.include = try builder.build_root.join (builder.allocator, &.{ "include", });
   path.source = try builder.build_root.join (builder.allocator, &.{ "source", });
   path.build = try std.fs.path.join (builder.allocator, &.{ path.tmp, "build", });
 
   if (builder.option (bool, "update", "Update binding") orelse false) try update (builder, &path);
 
-  const spirv_headers = builder.dependency ("spirv_headers", .{
-    .target = target,
-    .optimize = optimize,
-  });
-
   const lib = builder.addStaticLibrary (.{
-    .name = "spirv_tools",
+    .name = "spirv",
     .root_source_file = builder.addWriteFiles ().add ("empty.c", ""),
     .target = target,
     .optimize = optimize,
@@ -184,16 +213,19 @@ pub fn build (builder: *std.Build) !void
       .{ .path = ".", },
       .{ .path = "include", },
       .{ .path = "include-generated", },
-      spirv_headers.path ("include"),
-      spirv_headers.path (try std.fs.path.join (builder.allocator, &.{ "include", "spirv", "unified1", })),
+      .{ .path = try std.fs.path.join (builder.allocator, &.{ "include", "spirv", "unified1", }), },
     }) |include|
   {
-    std.debug.print ("[spirv-tools include] {s}\n", .{ include.getPath (builder), });
+    std.debug.print ("[spirv include] {s}\n", .{ include.getPath (builder), });
     lib.addIncludePath (include);
   }
 
-  lib.installHeadersDirectory (try std.fs.path.join (builder.allocator, &.{ "include", "spirv-tools", }), "spirv-tool");
-  std.debug.print ("[spirv-tools headers dir] {s}\n", .{ try builder.build_root.join (builder.allocator, &.{ "spirv-tools", }), });
+  const spirv_tools_include_path = try std.fs.path.join (builder.allocator, &.{ "include", "spirv-tools", });
+  lib.installHeadersDirectory (spirv_tools_include_path, "spirv-tools");
+  std.debug.print ("[spirv headers dir] {s}\n", .{ spirv_tools_include_path, });
+  const spirv_headers_include_path = try std.fs.path.join (builder.allocator, &.{ "include", "spirv", });
+  lib.installHeadersDirectory (spirv_headers_include_path, "spirv");
+  std.debug.print ("[spirv headers dir] {s}\n", .{ spirv_headers_include_path, });
 
   lib.linkLibCpp ();
 
@@ -209,10 +241,10 @@ pub fn build (builder: *std.Build) !void
     {
       .file => {
                  const source = try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, });
-                 if (std.mem.endsWith (u8, entry.basename, ".cpp"))
+                 if (toolbox.is_source_file (entry.basename))
                  {
                    try sources.append (source);
-                   std.debug.print ("[spirv-tools source] {s}\n", .{ source, });
+                   std.debug.print ("[spirv source] {s}\n", .{ source, });
                  }
                },
       else => {},
