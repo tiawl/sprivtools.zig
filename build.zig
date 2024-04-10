@@ -221,10 +221,10 @@ pub fn build (builder: *std.Build) !void
   }
 
   const spirv_tools_include_path = try std.fs.path.join (builder.allocator, &.{ "include", "spirv-tools", });
-  lib.installHeadersDirectory (spirv_tools_include_path, "spirv-tools");
+  lib.installHeadersDirectory (.{ .path = spirv_tools_include_path, }, "spirv-tools", .{});
   std.debug.print ("[spirv headers dir] {s}\n", .{ spirv_tools_include_path, });
   const spirv_headers_include_path = try std.fs.path.join (builder.allocator, &.{ "include", "spirv", });
-  lib.installHeadersDirectory (spirv_headers_include_path, "spirv");
+  lib.installHeadersDirectory (.{ .path = spirv_headers_include_path, }, "spirv", .{});
   std.debug.print ("[spirv headers dir] {s}\n", .{ spirv_headers_include_path, });
 
   lib.linkLibCpp ();
@@ -239,13 +239,10 @@ pub fn build (builder: *std.Build) !void
   {
     switch (entry.kind)
     {
-      .file => {
-                 const source = try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, });
-                 if (toolbox.is_source_file (entry.basename))
-                 {
-                   try sources.append (source);
-                   std.debug.print ("[spirv source] {s}\n", .{ source, });
-                 }
+      .file => if (toolbox.is_cpp_source_file (entry.basename))
+               {
+                 try sources.append (try std.fs.path.join (builder.allocator, &.{ "source", builder.dupe (entry.path), }));
+                 std.debug.print ("[spirv source] {s}\n", .{ try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, }), });
                },
       else => {},
     }
