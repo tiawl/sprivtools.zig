@@ -221,10 +221,10 @@ pub fn build (builder: *std.Build) !void
   }
 
   const spirv_tools_include_path = try std.fs.path.join (builder.allocator, &.{ "include", "spirv-tools", });
-  lib.installHeadersDirectory (.{ .path = spirv_tools_include_path, }, "spirv-tools", .{ .include_extensions = &.{}, });
+  lib.installHeadersDirectory (.{ .path = spirv_tools_include_path, }, "spirv-tools", .{ .include_extensions = &.{ ".h", ".hpp", ".hpp11", }, });
   std.debug.print ("[spirv headers dir] {s}\n", .{ spirv_tools_include_path, });
   const spirv_headers_include_path = try std.fs.path.join (builder.allocator, &.{ "include", "spirv", });
-  lib.installHeadersDirectory (.{ .path = spirv_headers_include_path, }, "spirv", .{ .include_extensions = &.{}, });
+  lib.installHeadersDirectory (.{ .path = spirv_headers_include_path, }, "spirv", .{ .include_extensions = &.{ ".h", ".hpp", ".hpp11", }, });
   std.debug.print ("[spirv headers dir] {s}\n", .{ spirv_headers_include_path, });
 
   lib.linkLibCpp ();
