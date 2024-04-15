@@ -27,8 +27,10 @@ fn update_headers (builder: *std.Build, path: *const Paths) !void
     const dest = try std.fs.path.join (builder.allocator, &.{ path.include, entry.path, });
     switch (entry.kind)
     {
-      .file => if (toolbox.is_header_file (entry.basename)) try toolbox.copy (
-        try std.fs.path.join (builder.allocator, &.{ spirv_headers_path, entry.path, }), dest),
+      .file => {
+        if (toolbox.is_header_file (entry.basename)) try toolbox.copy (
+          try std.fs.path.join (builder.allocator, &.{ spirv_headers_path, entry.path, }), dest);
+      },
       .directory => try toolbox.make (dest),
       else => return error.UnexpectedEntryKind,
     }
@@ -91,12 +93,14 @@ fn update_generated (builder: *std.Build, path: *const Paths) !void
   {
     switch (entry.kind)
     {
-      .file => if (std.mem.endsWith (u8, entry.basename, ".inc"))
-               {
-                 try toolbox.copy (
-                   try std.fs.path.join (builder.allocator, &.{ path.build, entry.path, }),
-                   try std.fs.path.join (builder.allocator, &.{ generated_path, entry.path, }));
-               },
+      .file => {
+        if (std.mem.endsWith (u8, entry.basename, ".inc"))
+        {
+          try toolbox.copy (
+            try std.fs.path.join (builder.allocator, &.{ path.build, entry.path, }),
+            try std.fs.path.join (builder.allocator, &.{ generated_path, entry.path, }));
+        }
+      },
       else => {},
     }
   }
@@ -146,12 +150,14 @@ fn update (builder: *std.Build, path: *const Paths) !void
   {
     switch (entry.kind)
     {
-      .file => if (std.fs.path.dirname (entry.path)) |dirname|
-               {
-                 if (!std.mem.eql (u8, "opt", dirname) and
-                   !std.mem.eql (u8, "val", dirname) and !std.mem.eql (u8, "util", dirname))
-                     try std.fs.deleteFileAbsolute (try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, }));
-               },
+      .file => {
+        if (std.fs.path.dirname (entry.path)) |dirname|
+        {
+          if (!std.mem.eql (u8, "opt", dirname) and
+            !std.mem.eql (u8, "val", dirname) and !std.mem.eql (u8, "util", dirname))
+              try std.fs.deleteFileAbsolute (try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, }));
+        }
+      },
       else => {},
     }
   }
@@ -169,18 +175,20 @@ fn update (builder: *std.Build, path: *const Paths) !void
       const entry_path = try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, });
       switch (entry.kind)
       {
-        .file => if (std.mem.endsWith (u8, entry.basename, ".txt"))
-                 {
-                   try std.fs.deleteFileAbsolute (entry_path);
-                   flag = true;
-                 },
+        .file => {
+          if (std.mem.endsWith (u8, entry.basename, ".txt"))
+          {
+            try std.fs.deleteFileAbsolute (entry_path);
+            flag = true;
+          }
+        },
         .directory => {
-                        std.fs.deleteDirAbsolute (entry_path) catch |err|
-                        {
-                          if (err == error.DirNotEmpty) continue else return err;
-                        };
-                        flag = true;
-                      },
+          std.fs.deleteDirAbsolute (entry_path) catch |err|
+          {
+            if (err == error.DirNotEmpty) continue else return err;
+          };
+          flag = true;
+        },
         else => {},
       }
     }
@@ -239,11 +247,13 @@ pub fn build (builder: *std.Build) !void
   {
     switch (entry.kind)
     {
-      .file => if (toolbox.is_cpp_source_file (entry.basename))
-               {
-                 try sources.append (try std.fs.path.join (builder.allocator, &.{ "source", builder.dupe (entry.path), }));
-                 std.debug.print ("[spirv source] {s}\n", .{ try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, }), });
-               },
+      .file => {
+        if (toolbox.is_cpp_source_file (entry.basename))
+        {
+          try sources.append (try std.fs.path.join (builder.allocator, &.{ "source", builder.dupe (entry.path), }));
+          std.debug.print ("[spirv source] {s}\n", .{ try std.fs.path.join (builder.allocator, &.{ path.source, entry.path, }), });
+        }
+      },
       else => {},
     }
   }
