@@ -5,9 +5,8 @@
   .paths = .{
     "build.zig",
     "build.zig.zon",
-    "include",
-    "include-generated",
-    "source",
+    "spirv",
+    "spirv-tools",
   },
   .dependencies = .{
     .toolbox = .{
