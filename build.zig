@@ -249,9 +249,9 @@ pub fn build (builder: *std.Build) !void
     try std.fs.path.join (builder.allocator, &.{ "spirv", "unified1", }),
   }) |include| toolbox.addInclude (lib, include);
 
-  toolbox.addHeader (lib, path.spirv_tools_in, "spirv",
+  toolbox.addHeader (lib, path.spirv, "spirv",
     &.{ ".h", ".hpp", ".hpp11", });
-  toolbox.addHeader (lib, path.spirv, "spirv-tools",
+  toolbox.addHeader (lib, path.spirv_tools_in, "spirv-tools",
     &.{ ".h", ".hpp", ".hpp11", });
 
   lib.linkLibCpp ();
