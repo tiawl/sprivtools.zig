@@ -1,6 +1,5 @@
 const std = @import ("std");
 const toolbox = @import ("toolbox");
-const pkg = .{ .name = "spirv.zig", .version = "1.3.280", };
 
 const Paths = struct
 {
@@ -12,11 +11,10 @@ const Paths = struct
   build: [] const u8 = undefined,
 };
 
-fn update_headers (builder: *std.Build, path: *const Paths) !void
+fn update_headers (builder: *std.Build, path: *const Paths,
+  dependencies: *const toolbox.Dependencies) !void
 {
-  try toolbox.clone (builder,
-    "https://github.com/KhronosGroup/SPIRV-Headers.git",
-    "vulkan-sdk-" ++ pkg.version ++ ".0", path.tmp);
+  try dependencies.clone (builder, "spirv", path.tmp);
 
   const tmp_include_path =
     try std.fs.path.join (builder.allocator, &.{ path.tmp, "include", });
@@ -97,20 +95,18 @@ fn update_generated (builder: *std.Build, path: *const Paths) !void
     try std.fs.openDirAbsolute (path.build, .{ .iterate = true, });
   defer build_dir.close ();
 
-  var walker = try build_dir.walk (builder.allocator);
-  defer walker.deinit ();
-
-  while (try walker.next ()) |*entry|
+  var it = build_dir.iterate ();
+  while (try it.next ()) |*entry|
   {
     switch (entry.kind)
     {
       .file => {
-        if (std.mem.endsWith (u8, entry.basename, ".inc"))
+        if (std.mem.endsWith (u8, entry.name, ".inc"))
         {
           try toolbox.copy (try std.fs.path.join (builder.allocator,
-            &.{ path.build, entry.path, }),
+            &.{ path.build, entry.name, }),
               try std.fs.path.join (builder.allocator,
-            &.{ path.spirv_tools_in, entry.path, }));
+            &.{ path.spirv_tools_in, entry.name, }));
         }
       },
       else => {},
@@ -118,7 +114,8 @@ fn update_generated (builder: *std.Build, path: *const Paths) !void
   }
 }
 
-fn update (builder: *std.Build, path: *const Paths) !void
+fn update (builder: *std.Build, path: *const Paths,
+  dependencies: *const toolbox.Dependencies) !void
 {
   std.fs.deleteTreeAbsolute (path.tmp) catch |err|
   {
@@ -135,11 +132,9 @@ fn update (builder: *std.Build, path: *const Paths) !void
     try toolbox.make (dest_path);
   }
 
-  try update_headers (builder, path);
+  try update_headers (builder, path, dependencies);
 
-  try toolbox.clone (builder,
-    "https://github.com/KhronosGroup/SPIRV-Tools.git",
-    "vulkan-sdk-" ++ pkg.version ++ ".0", path.tmp);
+  try dependencies.clone (builder, "spirv-tools", path.tmp);
   try toolbox.run (builder, .{ .argv = &[_][] const u8 { "python3",
     try std.fs.path.join (builder.allocator,
       &.{ "utils", "git-sync-deps", }), }, .cwd = path.tmp, });
@@ -181,38 +176,7 @@ fn update (builder: *std.Build, path: *const Paths) !void
     }
   }
 
-  var flag = true;
-
-  while (flag)
-  {
-    flag = false;
-    walker = try source_dir.walk (builder.allocator);
-    defer walker.deinit ();
-
-    while (try walker.next ()) |*entry|
-    {
-      const entry_path = try std.fs.path.join (builder.allocator,
-        &.{ path.source, entry.path, });
-      switch (entry.kind)
-      {
-        .file => {
-          if (std.mem.endsWith (u8, entry.basename, ".txt"))
-          {
-            try std.fs.deleteFileAbsolute (entry_path);
-            flag = true;
-          }
-        },
-        .directory => {
-          std.fs.deleteDirAbsolute (entry_path) catch |err|
-          {
-            if (err == error.DirNotEmpty) continue else return err;
-          };
-          flag = true;
-        },
-        else => {},
-      }
-    }
-  }
+  try toolbox.clean (builder, &.{ "spirv", "spirv-tools", }, &.{ ".inc", });
 }
 
 pub fn build (builder: *std.Build) !void
@@ -232,8 +196,30 @@ pub fn build (builder: *std.Build) !void
   path.build =
     try std.fs.path.join (builder.allocator, &.{ path.tmp, "build", });
 
+  const fetch_option = builder.option (bool, "fetch",
+    "Update .versions folder and build.zig.zon then stop execution")
+      orelse false;
+
+  var dependencies = try toolbox.Dependencies.init (builder,
+  .{
+     .toolbox = .{
+       .name = "tiawl/toolbox",
+       .api = toolbox.Repository.API.github,
+     },
+   }, .{
+     .spirv = .{
+       .name = "KhronosGroup/SPIRV-Headers",
+       .api = toolbox.Repository.API.github,
+     },
+     .@"spirv-tools" = .{
+       .name = "KhronosGroup/SPIRV-Tools",
+       .api = toolbox.Repository.API.github,
+     },
+   });
+
+  if (fetch_option) try dependencies.fetch (builder, "spirv.zig");
   if (builder.option (bool, "update", "Update binding") orelse false)
-    try update (builder, &path);
+    try update (builder, &path, &dependencies);
 
   const lib = builder.addStaticLibrary (.{
     .name = "spirv",
