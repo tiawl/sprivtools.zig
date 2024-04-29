@@ -196,11 +196,7 @@ pub fn build (builder: *std.Build) !void
   path.build =
     try std.fs.path.join (builder.allocator, &.{ path.tmp, "build", });
 
-  const fetch_option = builder.option (bool, "fetch",
-    "Update .versions folder and build.zig.zon then stop execution")
-      orelse false;
-
-  var dependencies = try toolbox.Dependencies.init (builder,
+  const dependencies = try toolbox.Dependencies.init (builder, "spirv.zig",
   .{
      .toolbox = .{
        .name = "tiawl/toolbox",
@@ -217,7 +213,6 @@ pub fn build (builder: *std.Build) !void
      },
    });
 
-  if (fetch_option) try dependencies.fetch (builder, "spirv.zig");
   if (builder.option (bool, "update", "Update binding") orelse false)
     try update (builder, &path, &dependencies);
 
