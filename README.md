@@ -11,7 +11,7 @@ However this repository has subtle differences for maintainability tasks:
 * No shell scripting,
 * A cron runs every day to check [KhronosGroup/SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools) and [KhronosGroup/SPIRV-Headers](https://github.com/KhronosGroup/SPIRV-Headers). Then it updates this repository if a new release is available.
 
-You can find the repositories' versions used here:
+Here the repositories' version used by this fork:
 * [KhronosGroup/SPIRV-Tools](https://github.com/tiawl/spirv.zig/blob/trunk/.versions/spirv-tools)
 * [KhronosGroup/SPIRV-Headers](https://github.com/tiawl/spirv.zig/blob/trunk/.versions/spirv)
 
