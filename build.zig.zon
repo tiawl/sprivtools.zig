@@ -3,10 +3,12 @@
     .version = "1.0.0",
     .minimum_zig_version = "0.12.0",
     .paths = .{
+        "README.md",
         "spirv",
         "build.zig.zon",
         "spirv-tools",
         "build.zig",
+        "LICENSE.md",
     },
     .dependencies = .{
         .toolbox = .{
