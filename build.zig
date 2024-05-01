@@ -218,6 +218,7 @@ pub fn build (builder: *std.Build) !void
   const path = try Paths.init (builder);
 
   const dependencies = try toolbox.Dependencies.init (builder, "spirv.zig",
+  &.{ "spirv", "spirv-tools", },
   .{
      .toolbox = .{
        .name = "tiawl/toolbox",
