@@ -11,6 +11,14 @@ However this repository has subtle differences for maintainability tasks:
 * No shell scripting,
 * A cron runs every day to check [KhronosGroup/SPIRV-Tools][2] and [KhronosGroup/SPIRV-Headers][3]. Then it updates this repository if a new release is available.
 
+## How to use it
+
+The current usage of this repository is centered around [tiawl/shaderc.zig][3] compilation. But you could use it for your own projects. Headers are here and there are no planned evolution to modify them. See [tiawl/shaderc.zig][3] to see how you can use it. Maybe for your own need, some headers are missing. If it happens, open an issue: this repository is open to potential usage evolution.
+
+## Dependencies
+
+The [Zig][4] part of this package is relying on the latest [Zig][4] release (0.12.0) and will only be updated for the next one (so for the 0.13.0).
+
 Here the repositories' version used by this fork:
 * [KhronosGroup/SPIRV-Tools](https://github.com/tiawl/spirv.zig/blob/trunk/.versions/spirv-tools)
 * [KhronosGroup/SPIRV-Headers](https://github.com/tiawl/spirv.zig/blob/trunk/.versions/spirv)
