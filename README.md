@@ -7,6 +7,7 @@ This is a fork of [hexops/spirv-tools][1] which itself is a fork of [KhronosGrou
 The intention under this fork is the same as [hexops][11] had when they forked [KhronosGroup/SPIRV-Tools][2]: package the headers for [Zig][4]. So:
 * Unnecessary files have been deleted,
 * The build system has been replaced with `build.zig`.
+
 However this repository has subtle differences for maintainability tasks:
 * No shell scripting,
 * A cron runs every day to check [KhronosGroup/SPIRV-Tools][2] and [KhronosGroup/SPIRV-Headers][3]. Then it updates this repository if a new release is available.
