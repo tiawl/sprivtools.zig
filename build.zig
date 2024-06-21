@@ -229,7 +229,7 @@ pub fn build (builder: *std.Build) !void
      .spirv = .{
        .name = "KhronosGroup/SPIRV-Headers",
        .host = toolbox.Repository.Host.github,
-       .ref = toolbox.Repository.Reference.tag,
+       .ref = toolbox.Repository.Reference.commit,
      },
      .@"spirv-tools" = .{
        .name = "KhronosGroup/SPIRV-Tools",
