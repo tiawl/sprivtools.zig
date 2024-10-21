@@ -234,7 +234,7 @@ pub fn build (builder: *std.Build) !void
      .@"spirv-tools" = .{
        .name = "KhronosGroup/SPIRV-Tools",
        .host = toolbox.Repository.Host.github,
-       .ref = toolbox.Repository.Reference.tag,
+       .ref = toolbox.Repository.Reference.commit,
      },
    });
 
