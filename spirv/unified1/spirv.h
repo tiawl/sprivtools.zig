@@ -78,6 +78,7 @@ typedef enum SpvSourceLanguage_ {
     SpvSourceLanguageWGSL = 10,
     SpvSourceLanguageSlang = 11,
     SpvSourceLanguageZig = 12,
+    SpvSourceLanguageRust = 13,
     SpvSourceLanguageMax = 0x7fffffff,
 } SpvSourceLanguage;
 
@@ -1254,6 +1255,9 @@ typedef enum SpvCapability_ {
     SpvCapabilityGlobalVariableHostAccessINTEL = 6187,
     SpvCapabilityGlobalVariableFPGADecorationsINTEL = 6189,
     SpvCapabilitySubgroupBufferPrefetchINTEL = 6220,
+    SpvCapabilitySubgroup2DBlockIOINTEL = 6228,
+    SpvCapabilitySubgroup2DBlockTransformINTEL = 6229,
+    SpvCapabilitySubgroup2DBlockTransposeINTEL = 6230,
     SpvCapabilityGroupUniformArithmeticKHR = 6400,
     SpvCapabilityMaskedGatherScatterINTEL = 6427,
     SpvCapabilityCacheControlsINTEL = 6441,
@@ -2245,6 +2249,11 @@ typedef enum SpvOp_ {
     SpvOpControlBarrierWaitINTEL = 6143,
     SpvOpArithmeticFenceEXT = 6145,
     SpvOpSubgroupBlockPrefetchINTEL = 6221,
+    SpvOpSubgroup2DBlockLoadINTEL = 6231,
+    SpvOpSubgroup2DBlockLoadTransformINTEL = 6232,
+    SpvOpSubgroup2DBlockLoadTransposeINTEL = 6233,
+    SpvOpSubgroup2DBlockPrefetchINTEL = 6234,
+    SpvOpSubgroup2DBlockStoreINTEL = 6235,
     SpvOpGroupIMulKHR = 6401,
     SpvOpGroupFMulKHR = 6402,
     SpvOpGroupBitwiseAndKHR = 6403,
@@ -3015,6 +3024,11 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
     case SpvOpControlBarrierWaitINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpArithmeticFenceEXT: *hasResult = true; *hasResultType = true; break;
     case SpvOpSubgroupBlockPrefetchINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpSubgroup2DBlockLoadINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpSubgroup2DBlockLoadTransformINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpSubgroup2DBlockLoadTransposeINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpSubgroup2DBlockPrefetchINTEL: *hasResult = false; *hasResultType = false; break;
+    case SpvOpSubgroup2DBlockStoreINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpGroupIMulKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpGroupFMulKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpGroupBitwiseAndKHR: *hasResult = true; *hasResultType = true; break;
@@ -3042,6 +3056,7 @@ inline const char* SpvSourceLanguageToString(SpvSourceLanguage value) {
     case SpvSourceLanguageWGSL: return "WGSL";
     case SpvSourceLanguageSlang: return "Slang";
     case SpvSourceLanguageZig: return "Zig";
+    case SpvSourceLanguageRust: return "Rust";
     default: return "Unknown";
     }
 }
@@ -3946,6 +3961,9 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilityGlobalVariableHostAccessINTEL: return "GlobalVariableHostAccessINTEL";
     case SpvCapabilityGlobalVariableFPGADecorationsINTEL: return "GlobalVariableFPGADecorationsINTEL";
     case SpvCapabilitySubgroupBufferPrefetchINTEL: return "SubgroupBufferPrefetchINTEL";
+    case SpvCapabilitySubgroup2DBlockIOINTEL: return "Subgroup2DBlockIOINTEL";
+    case SpvCapabilitySubgroup2DBlockTransformINTEL: return "Subgroup2DBlockTransformINTEL";
+    case SpvCapabilitySubgroup2DBlockTransposeINTEL: return "Subgroup2DBlockTransposeINTEL";
     case SpvCapabilityGroupUniformArithmeticKHR: return "GroupUniformArithmeticKHR";
     case SpvCapabilityMaskedGatherScatterINTEL: return "MaskedGatherScatterINTEL";
     case SpvCapabilityCacheControlsINTEL: return "CacheControlsINTEL";
@@ -4859,6 +4877,11 @@ inline const char* SpvOpToString(SpvOp value) {
     case SpvOpControlBarrierWaitINTEL: return "OpControlBarrierWaitINTEL";
     case SpvOpArithmeticFenceEXT: return "OpArithmeticFenceEXT";
     case SpvOpSubgroupBlockPrefetchINTEL: return "OpSubgroupBlockPrefetchINTEL";
+    case SpvOpSubgroup2DBlockLoadINTEL: return "OpSubgroup2DBlockLoadINTEL";
+    case SpvOpSubgroup2DBlockLoadTransformINTEL: return "OpSubgroup2DBlockLoadTransformINTEL";
+    case SpvOpSubgroup2DBlockLoadTransposeINTEL: return "OpSubgroup2DBlockLoadTransposeINTEL";
+    case SpvOpSubgroup2DBlockPrefetchINTEL: return "OpSubgroup2DBlockPrefetchINTEL";
+    case SpvOpSubgroup2DBlockStoreINTEL: return "OpSubgroup2DBlockStoreINTEL";
     case SpvOpGroupIMulKHR: return "OpGroupIMulKHR";
     case SpvOpGroupFMulKHR: return "OpGroupFMulKHR";
     case SpvOpGroupBitwiseAndKHR: return "OpGroupBitwiseAndKHR";
