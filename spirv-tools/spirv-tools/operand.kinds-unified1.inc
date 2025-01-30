@@ -357,6 +357,7 @@ static const spvtools::Extension pygen_variable_exts_SPV_NVX_multiview_per_view_
 static const spvtools::Extension pygen_variable_exts_SPV_NV_bindless_texture[] = {spvtools::Extension::kSPV_NV_bindless_texture};
 static const spvtools::Extension pygen_variable_exts_SPV_NV_cooperative_matrix[] = {spvtools::Extension::kSPV_NV_cooperative_matrix};
 static const spvtools::Extension pygen_variable_exts_SPV_NV_cooperative_matrix2[] = {spvtools::Extension::kSPV_NV_cooperative_matrix2};
+static const spvtools::Extension pygen_variable_exts_SPV_NV_cooperative_vector[] = {spvtools::Extension::kSPV_NV_cooperative_vector};
 static const spvtools::Extension pygen_variable_exts_SPV_NV_displacement_micromap[] = {spvtools::Extension::kSPV_NV_displacement_micromap};
 static const spvtools::Extension pygen_variable_exts_SPV_NV_geometry_shader_passthrough[] = {spvtools::Extension::kSPV_NV_geometry_shader_passthrough};
 static const spvtools::Extension pygen_variable_exts_SPV_NV_mesh_shader[] = {spvtools::Extension::kSPV_NV_mesh_shader};
@@ -1322,6 +1323,7 @@ static const spv_operand_desc_t pygen_variable_CapabilityEntries[] = {
   {"ShaderInvocationReorderNV", 5383, 0, nullptr, 1, pygen_variable_caps_RayTracingKHR, 1, pygen_variable_exts_SPV_NV_shader_invocation_reorder, {}, 0xffffffffu, 0xffffffffu},
   {"BindlessTextureNV", 5390, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_bindless_texture, {}, 0xffffffffu, 0xffffffffu},
   {"RayQueryPositionFetchKHR", 5391, 0, nullptr, 1, pygen_variable_caps_Shader, 1, pygen_variable_exts_SPV_KHR_ray_tracing_position_fetch, {}, 0xffffffffu, 0xffffffffu},
+  {"CooperativeVectorNV", 5394, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_cooperative_vector, {}, 0xffffffffu, 0xffffffffu},
   {"AtomicFloat16VectorNV", 5404, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_shader_atomic_fp16_vector, {}, 0xffffffffu, 0xffffffffu},
   {"RayTracingDisplacementMicromapNV", 5409, 0, nullptr, 1, pygen_variable_caps_RayTracingKHR, 1, pygen_variable_exts_SPV_NV_displacement_micromap, {}, 0xffffffffu, 0xffffffffu},
   {"RawAccessChainsNV", 5414, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_raw_access_chains, {}, 0xffffffffu, 0xffffffffu},
@@ -1330,6 +1332,7 @@ static const spv_operand_desc_t pygen_variable_CapabilityEntries[] = {
   {"CooperativeMatrixPerElementOperationsNV", 5432, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_cooperative_matrix2, {}, 0xffffffffu, 0xffffffffu},
   {"CooperativeMatrixTensorAddressingNV", 5433, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_cooperative_matrix2, {}, 0xffffffffu, 0xffffffffu},
   {"CooperativeMatrixBlockLoadsNV", 5434, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_cooperative_matrix2, {}, 0xffffffffu, 0xffffffffu},
+  {"CooperativeVectorTrainingNV", 5435, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_cooperative_vector, {}, 0xffffffffu, 0xffffffffu},
   {"TensorAddressingNV", 5439, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_NV_tensor_addressing, {}, 0xffffffffu, 0xffffffffu},
   {"SubgroupShuffleINTEL", 5568, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_INTEL_subgroups, {}, 0xffffffffu, 0xffffffffu},
   {"SubgroupBufferBlockIOINTEL", 5569, 0, nullptr, 0, nullptr, 1, pygen_variable_exts_SPV_INTEL_subgroups, {}, 0xffffffffu, 0xffffffffu},
@@ -1518,6 +1521,31 @@ static const spv_operand_desc_t pygen_variable_FPEncodingEntries[] = {
   {"place holder", 0, 0, nullptr, 0, nullptr, 0, nullptr, {}, SPV_SPIRV_VERSION_WORD(999,0), 0}
 };
 
+static const spv_operand_desc_t pygen_variable_CooperativeVectorMatrixLayoutEntries[] = {
+  {"RowMajorNV", 0, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"ColumnMajorNV", 1, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"InferencingOptimalNV", 2, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"TrainingOptimalNV", 3, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu}
+};
+
+static const spv_operand_desc_t pygen_variable_ComponentTypeEntries[] = {
+  {"Float16NV", 0, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"Float32NV", 1, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"Float64NV", 2, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"SignedInt8NV", 3, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"SignedInt16NV", 4, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"SignedInt32NV", 5, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"SignedInt64NV", 6, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"UnsignedInt8NV", 7, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"UnsignedInt16NV", 8, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"UnsignedInt32NV", 9, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"UnsignedInt64NV", 10, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"SignedInt8PackedNV", 1000491000, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"UnsignedInt8PackedNV", 1000491001, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"FloatE4M3NV", 1000491002, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu},
+  {"FloatE5M2NV", 1000491003, 0, nullptr, 0, nullptr, 0, nullptr, {}, 0xffffffffu, 0xffffffffu}
+};
+
 static const spv_operand_desc_t pygen_variable_DebugInfoFlagsEntries[] = {
   {"None", 0x0000, 0, nullptr, 0, nullptr, 0, nullptr, {}, SPV_SPIRV_VERSION_WORD(1, 0), 0xffffffffu},
   {"FlagIsProtected", 0x01, 0, nullptr, 0, nullptr, 0, nullptr, {}, SPV_SPIRV_VERSION_WORD(1, 0), 0xffffffffu},
@@ -1691,6 +1719,8 @@ static const spv_operand_desc_group_t pygen_variable_OperandInfoTable[] = {
   {SPV_OPERAND_TYPE_NAMED_MAXIMUM_NUMBER_OF_REGISTERS, ARRAY_SIZE(pygen_variable_NamedMaximumNumberOfRegistersEntries), pygen_variable_NamedMaximumNumberOfRegistersEntries},
   {SPV_OPERAND_TYPE_MATRIX_MULTIPLY_ACCUMULATE_OPERANDS, ARRAY_SIZE(pygen_variable_MatrixMultiplyAccumulateOperandsEntries), pygen_variable_MatrixMultiplyAccumulateOperandsEntries},
   {SPV_OPERAND_TYPE_FPENCODING, ARRAY_SIZE(pygen_variable_FPEncodingEntries), pygen_variable_FPEncodingEntries},
+  {SPV_OPERAND_TYPE_COOPERATIVE_VECTOR_MATRIX_LAYOUT, ARRAY_SIZE(pygen_variable_CooperativeVectorMatrixLayoutEntries), pygen_variable_CooperativeVectorMatrixLayoutEntries},
+  {SPV_OPERAND_TYPE_COMPONENT_TYPE, ARRAY_SIZE(pygen_variable_ComponentTypeEntries), pygen_variable_ComponentTypeEntries},
   {SPV_OPERAND_TYPE_DEBUG_INFO_FLAGS, ARRAY_SIZE(pygen_variable_DebugInfoFlagsEntries), pygen_variable_DebugInfoFlagsEntries},
   {SPV_OPERAND_TYPE_DEBUG_BASE_TYPE_ATTRIBUTE_ENCODING, ARRAY_SIZE(pygen_variable_DebugBaseTypeAttributeEncodingEntries), pygen_variable_DebugBaseTypeAttributeEncodingEntries},
   {SPV_OPERAND_TYPE_DEBUG_COMPOSITE_TYPE, ARRAY_SIZE(pygen_variable_DebugCompositeTypeEntries), pygen_variable_DebugCompositeTypeEntries},
