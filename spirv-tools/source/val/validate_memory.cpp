@@ -702,33 +702,6 @@ spv_result_t ValidateVariable(ValidationState_t& _, const Instruction* inst) {
            << "PhysicalStorageBuffer must not be used with OpVariable.";
   }
 
-  auto pointee_base = pointee;
-  while (pointee_base && pointee_base->opcode() == spv::Op::OpTypeArray) {
-    pointee_base = _.FindDef(pointee_base->GetOperandAs<uint32_t>(1u));
-  }
-  if (pointee_base && pointee_base->opcode() == spv::Op::OpTypePointer) {
-    if (pointee_base->GetOperandAs<spv::StorageClass>(1u) ==
-        spv::StorageClass::PhysicalStorageBuffer) {
-      // check for AliasedPointer/RestrictPointer
-      bool foundAliased =
-          _.HasDecoration(inst->id(), spv::Decoration::AliasedPointer);
-      bool foundRestrict =
-          _.HasDecoration(inst->id(), spv::Decoration::RestrictPointer);
-      if (!foundAliased && !foundRestrict) {
-        return _.diag(SPV_ERROR_INVALID_ID, inst)
-               << "OpVariable " << inst->id()
-               << ": expected AliasedPointer or RestrictPointer for "
-               << "PhysicalStorageBuffer pointer.";
-      }
-      if (foundAliased && foundRestrict) {
-        return _.diag(SPV_ERROR_INVALID_ID, inst)
-               << "OpVariable " << inst->id()
-               << ": can't specify both AliasedPointer and "
-               << "RestrictPointer for PhysicalStorageBuffer pointer.";
-      }
-    }
-  }
-
   // Vulkan specific validation rules for OpTypeRuntimeArray
   if (spvIsVulkanEnv(_.context()->target_env)) {
     // OpTypeRuntimeArray should only ever be in a container like OpTypeStruct,
@@ -1608,9 +1581,10 @@ spv_result_t ValidateAccessChain(ValidationState_t& _,
         // index: the index must be an OpConstant.
         int64_t cur_index;
         if (!_.EvalConstantValInt64(cur_word, &cur_index)) {
-          return _.diag(SPV_ERROR_INVALID_ID, cur_word_instr)
-                 << "The <id> passed to " << instr_name
-                 << " to index into a "
+          return _.diag(SPV_ERROR_INVALID_ID, inst)
+                 << "The <id> passed to " << instr_name << " to index "
+                 << _.getIdName(cur_word)
+                 << " into a "
                     "structure must be an OpConstant.";
         }
 
@@ -1619,10 +1593,10 @@ spv_result_t ValidateAccessChain(ValidationState_t& _,
         const int64_t num_struct_members =
             static_cast<int64_t>(type_pointee->words().size() - 2);
         if (cur_index >= num_struct_members || cur_index < 0) {
-          return _.diag(SPV_ERROR_INVALID_ID, cur_word_instr)
-                 << "Index is out of bounds: " << instr_name
-                 << " cannot find index " << cur_index
-                 << " into the structure <id> "
+          return _.diag(SPV_ERROR_INVALID_ID, inst)
+                 << "Index " << _.getIdName(cur_word)
+                 << " is out of bounds: " << instr_name << " cannot find index "
+                 << cur_index << " into the structure <id> "
                  << _.getIdName(type_pointee->id()) << ". This structure has "
                  << num_struct_members << " members. Largest valid index is "
                  << num_struct_members - 1 << ".";
