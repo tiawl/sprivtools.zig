@@ -42,6 +42,7 @@ jobs:
       uses: mlugg/setup-zig@v1
       with:
         version: ${{ env.ZIG_VERSION }}
+        use-cache: false
 
     - name: Setup git user information
       env:
